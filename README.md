@@ -1,10 +1,10 @@
 # Peaks_Code
 
-Usare schema.sql per generare il database
+Usare **schema.sql** per generare il database
 
 Libreria OpenPGP: usare branch *pks_branch* e compilare con *make gpg-compatible*
-Librerie NTL e GMP: lanciare *./compile_libraries.sh*
+Librerie NTL e GMP: lanciare *./compile_libraries.sh release* (o debug a seconda del build type richiesto)
 
-Applicativi C++: compilare con "*cmake -DCMAKE_BUILD_TYPE=Release .*". L'eseguibile verrà creato nella sottocartella *bin*.
+Applicativi C++: compilare con "*cmake -DCMAKE_BUILD_TYPE=Release .*" (o debug a seconda del build type richiesto). L'eseguibile verrà creato nella sottocartella *bin*.
 
 Recon Daemon: compilare con il classico *make*
