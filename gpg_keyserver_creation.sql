@@ -313,10 +313,10 @@ ALTER TABLE `KeyStatus`
 --
 ALTER TABLE `Pubkey`
   ADD PRIMARY KEY (`version`,`fingerprint`),
-  ADD KEY `n` (`n`(200)),
-  ADD KEY `p` (`p`(200)),
-  ADD KEY `q` (`q`(200)),
-  ADD KEY `y` (`y`(200)),
+  ADD KEY `n` (`n`(1024)),
+  ADD KEY `p` (`p`(1024)),
+  ADD KEY `q` (`q`(1024)),
+  ADD KEY `y` (`y`(1024)),
   ADD KEY `sccIndex` (`sccIndex`),
   ADD KEY `keyId` (`keyId`,`fingerprint`) USING BTREE,
   ADD KEY `fingerprint` (`fingerprint`),
@@ -345,15 +345,15 @@ ALTER TABLE `selfSignaturesMetadata`
 --
 ALTER TABLE `Signatures`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `r_2` (`r`(200),`s`(200)) USING BTREE,
+  ADD UNIQUE KEY `r_2` (`r`(1024),`s`(1024)) USING BTREE,
   ADD KEY `type` (`type`),
   ADD KEY `hashAlgorithm` (`hashAlgorithm`),
   ADD KEY `issuingKeyId` (`issuingKeyId`),
   ADD KEY `signedKeyId` (`signedKeyId`),
   ADD KEY `issuingFingerprint` (`issuingFingerprint`),
   ADD KEY `signedFingerprint` (`signedFingerprint`),
-  ADD KEY `r` (`r`(200)),
-  ADD KEY `s` (`s`(200)),
+  ADD KEY `r` (`r`(1024)),
+  ADD KEY `s` (`s`(1024)),
   ADD KEY `Unique_index` (`issuingKeyId`,`signedKeyId`,`signedUsername`,`creationTime`) USING BTREE,
   ADD KEY `version` (`version`),
   ADD KEY `signed_key` (`signedKeyId`,`signedFingerprint`),
@@ -379,17 +379,17 @@ ALTER TABLE `Unpacker_errors`
 -- Indexes for table `UserAttribute`
 --
 ALTER TABLE `UserAttribute`
-  ADD PRIMARY KEY (`id`,`fingerprint`,`name`(200)),
-  ADD UNIQUE KEY `fingerprint` (`fingerprint`(10),`name`(200),`image`(60)) USING BTREE,
-  ADD KEY `userID` (`fingerprint`,`name`(200));
+  ADD PRIMARY KEY (`id`,`fingerprint`,`name`),
+  ADD UNIQUE KEY `fingerprint` (`fingerprint`(10),`name`,`image`(60)) USING BTREE,
+  ADD KEY `userID` (`fingerprint`,`name`);
 
 --
 -- Indexes for table `UserID`
 --
 ALTER TABLE `UserID`
-  ADD PRIMARY KEY (`fingerprint`,`name`(200)) USING BTREE,
+  ADD PRIMARY KEY (`fingerprint`,`name`) USING BTREE,
   ADD KEY `ownerkeyID` (`ownerkeyID`,`fingerprint`),
-  ADD KEY `name` (`name`(200));
+  ADD KEY `name` (`name`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -418,6 +418,64 @@ ALTER TABLE `Signatures`
 --
 ALTER TABLE `Unpacker_errors`
   MODIFY `idx` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `KeyStatus`
+--
+ALTER TABLE `KeyStatus`
+  ADD CONSTRAINT `vuln_key` FOREIGN KEY (`version`,`fingerprint`) REFERENCES `Pubkey` (`version`, `fingerprint`) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `Pubkey`
+--
+ALTER TABLE `Pubkey`
+  ADD CONSTRAINT `Pubkey_cert` FOREIGN KEY (`version`,`PriFingerprint`) REFERENCES `gpg_keyserver` (`version`, `fingerprint`) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `selfSignaturesMetadata`
+--
+ALTER TABLE `selfSignaturesMetadata`
+  ADD CONSTRAINT `SelfSign_key` FOREIGN KEY (`issuingKeyId`,`issuingFingerprint`) REFERENCES `Pubkey` (`keyId`, `fingerprint`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  ADD CONSTRAINT `SelfSign_userID` FOREIGN KEY (`signedUserId`) REFERENCES `UserID` (`name`);
+
+--
+-- Constraints for table `Signatures`
+--
+ALTER TABLE `Signatures`
+  ADD CONSTRAINT `issuing_key` FOREIGN KEY (`issuingKeyId`,`issuingFingerprint`) REFERENCES `Pubkey` (`keyId`, `fingerprint`) ON DELETE CASCADE,
+  ADD CONSTRAINT `issuing_uid` FOREIGN KEY (`issuingUsername`) REFERENCES `UserID` (`name`),
+  ADD CONSTRAINT `signed_key` FOREIGN KEY (`signedKeyId`,`signedFingerprint`) REFERENCES `Pubkey` (`keyId`, `fingerprint`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  ADD CONSTRAINT `signed_uatt` FOREIGN KEY (`sign_Uatt_id`,`signedFingerprint`) REFERENCES `UserAttribute` (`id`, `fingerprint`),
+  ADD CONSTRAINT `signed_uid` FOREIGN KEY (`signedUsername`) REFERENCES `UserID` (`name`);
+
+--
+-- Constraints for table `SignatureStatus`
+--
+ALTER TABLE `SignatureStatus`
+  ADD CONSTRAINT `vuln_signature` FOREIGN KEY (`signature_id`) REFERENCES `Signatures` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `Unpacker_errors`
+--
+ALTER TABLE `Unpacker_errors`
+  ADD CONSTRAINT `error_certificate` FOREIGN KEY (`version`,`fingerprint`) REFERENCES `gpg_keyserver` (`version`, `fingerprint`);
+
+--
+-- Constraints for table `UserAttribute`
+--
+ALTER TABLE `UserAttribute`
+  ADD CONSTRAINT `userID` FOREIGN KEY (`fingerprint`,`name`) REFERENCES `UserID` (`fingerprint`, `name`) ON UPDATE NO ACTION;
+
+--
+-- Constraints for table `UserID`
+--
+ALTER TABLE `UserID`
+  ADD CONSTRAINT `uid_key` FOREIGN KEY (`ownerkeyID`,`fingerprint`) REFERENCES `gpg_keyserver` (`ID`, `fingerprint`);
+COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
